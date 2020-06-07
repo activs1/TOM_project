@@ -7,6 +7,7 @@ from tensorflow.keras.activations import softmax, relu
 from tensorflow.keras.regularizers import l1, l2, l1_l2
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import Accuracy, Precision, Recall 
+from DICE import *
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -144,18 +145,6 @@ def get_UNET(input_shape, classes = 3):
   return model
 
 
-
-
-def DICE(y_true, y_pred, smooth=1e-7):
-    from keras import backend as K
-    X = K.flatten(y_true)
-    Y = K.flatten(y_pred)
-    intersection = K.sum(X * Y, axis = 0)
-    return (2. * intersection) / (K.sum(X, axis = 0) + K.sum(Y, axis = 0) + smooth)
-
-    
-def DICE_loss(y_true, y_pred):
-  return -DICE(y_true, y_pred)
 
 
 #model = get_UNET((512,512, 1))
