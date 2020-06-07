@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 '''
-This file contains implementation of UNet architecture and Dice Coefficient and Loss
+This file contains implementation of UNet architecture
 '''
 
 #def get_UNET(input_shape, classes = 3):
