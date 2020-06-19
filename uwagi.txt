@@ -1,0 +1,9 @@
+Projekt na wstępnym etapie realizacji.
+
+Uwagi:
+1) Zaproponowany sposób zmiany formatu jest błędny. Proponuję użyć biblioteki skimage i zapisać dane w formacie .mha, a następnie napisać własny dataloader.
+2) Proponuję wykorzystać dwie oddzielnie sieci - jedną dla nerki, drugą dla nowotworu. Wyeleminuje to koniecznosć kodowania masek binarnych.
+Sieć będzie mogła być uczona bezpośrednio na współczynniku Dice'a.
+3) Proponuję rozważyć augmentacje danych treningowych.
+4) W jaki sposób zbiór został podzielony na zbiór treningowy/walidacyjny/testowy? Proszę opisać w raporcie końcowym.
+5) Proszę pamiętać o szczegółowym przedstawieniu wyników (ilościowo i wizualnie).
