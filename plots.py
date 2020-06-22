@@ -88,6 +88,6 @@ def show_subplot_results(img, mask, mask_pred, path=None):
     plt.imshow(mask_pred_on_img, cmap='gray')
     plt.title("Predicted mask\non image", fontsize=10)
     plt.axis('off')
-
+    plt.show()
     if path is not None:
         plt.savefig(path)
