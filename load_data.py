@@ -1,87 +1,131 @@
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Conv2D, MaxPool2D, Dropout, Concatenate, Input, UpSampling2D
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.utils import plot_model
-from tensorflow.keras.initializers import he_normal, he_uniform
-from tensorflow.keras.activations import softmax, relu
-from tensorflow.keras.regularizers import l1, l2, l1_l2
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.metrics import Accuracy, Precision, Recall 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage.color import rgb2gray
 
 from starter_code.utils import load_case
 
 '''
 This file contains implemention of function used to save data to .png files in train and test folders
-Also, there's an implementation of generator, which yields images and masks in batches
+// Not saving to .png in this version, saving it straight to numpy arrays
 '''
 
-CASES_TRAIN = 20
-CASES_TEST = 5
+def save_train_test_cases_arrays(test_size=0.3, num_cases=60, type_='kidney', IMG_HEIGHT=256, IMG_WIDTH=256):
+  '''
+  Function deals with splitting dataset into train and test sets in view of cases from kits19 dataset
+  Takes:
+      test_size -> value of test set size (train_size = 1-test_size)
+      num_cases -> how many cases from kits19 dataset to take (counting from 0)
+      type_ -> string 'kidney' or 'tumour', what ind of mask to make
+      
+  Returns:
+      X_train, Y_train, X_test, Y_test -> training and test sets of images and ground truths
 
-# TODO: Implement code fragment to remove all_black images
-# Right now we are loading all slices in an image, which causes drastic imbalance
-
-def save_train_test_cases(train_cases=20, test_cases=5, path_train, path_test, verbose = False, verbose_step=100):
-    for case in range(0, train_cases):
-        vol, seg = load_case(case)
-        vol = vol.get_data()
-        seg = seg.get_data()
-        SLICES = vol.shape[0]
-
-        for slice in range(0, SLICES):
-            plt.imsave(f'{path_train}/image/img/img_case{case}_slice{slice}.png', rgb2gray(vol[slice, :, :]))
-            plt.imsave(f'{path_train}/mask/img/seg_case{case}_slice{slice}.png', rgb2gray(seg[slice, :, :]))
-            
-            if verbose and slice % verbose_step == 0:
-                print(f'Saved train case {case} slice {slice}')
-
-
-    for case in range(train_cases, train_cases + test_cases):
-        vol, seg = load_case(case)
-        vol = vol.get_data()
-        seg = seg.get_data()
-        SLICES = vol.shape[0]
-
-        for slice in range(0, SLICES):
-            plt.imsave(f'{path_test}/image/img/img_case{case}_slice{slice}_test.png', rgb2gray(vol[slice, :, :]))
-            plt.imsave(f'{path_test}/mask/img/seg_case{case}_slice{slice}_test.png', rgb2gray(seg[slice, :, :]))
-            
-            if verbose and slice % verbose_step == 0:
-                print(f'Saved test case {case} slice {slice}')
-
-
-# Image generator
-def my_image_mask_generator(image_data_generator, mask_data_generator):
-    train_generator = zip(image_data_generator, mask_data_generator)
-    for (img, mask) in train_generator:
-      # LABELS 30 110 215 -> 30 background, 110 -> kidney, 215 -> tumour
-      #background = 30 / 255
-      kidney = 110 #/ 255
-      tumour = 215 #/ 255
-
-      # ONE HOT ENCODING (is it OK?)
-      mask = rgb2gray(mask.reshape(BATCH_SIZE, 512, 512, 1)) #/ 255
-      new_mask = np.zeros((BATCH_SIZE, 512, 512, 2))
-      for batch in range(0, BATCH_SIZE):
-        for x in range (0, 512):
-          for y in range (0, 512):
-            #if mask[batch, x, y] == background: ??
-              #new_mask[batch, x, y, 0] = 1 ??
-            if mask[batch, x, y] == kidney:
-              new_mask[batch, x, y, 0] = 1
-            elif mask[batch, x, y] == tumour:
-              new_mask[batch, x, y, 1] = 1
-
+  '''  
     
-      yield ((rgb2gray(img).reshape(BATCH_SIZE, 512, 512, 1)) / 255, new_mask)  
+    
+    
+  from sklearn.model_selection import train_test_split
+  from skimage.transform import resize
+  CASES = np.linspace(0, num_cases-1, num_cases, dtype=np.uint8)
+  print(CASES)
+ 
+  CASES_TRAIN, CASES_TEST, _, _ = train_test_split(CASES, np.zeros((num_cases, 1)), test_size=test_size, random_state=123)
+  print(f'Train {CASES_TRAIN}')
+  print(f'Test {CASES_TEST}')
+  X_train = []
+  Y_train = []
+  X_test = []
+  Y_test = []
+  slice_train = 0
+  slice_test = 0
+ 
+  for case in range(0,len(CASES)):
+    try:
+      vol, seg = load_case(case)
+      vol = vol.get_fdata()
+      seg = seg.get_fdata()
+      SLICES = vol.shape[0]
+      print("SLICES: ", SLICES)
+      if case in CASES_TRAIN:
+        for slice in range(0, SLICES):
+          if len(np.unique(seg[slice, :, :])) != 1:
+            print(f'Saving slice {slice} of case {case} TRAIN')
+            
+            slice_train += 1
+            
+            img = vol[slice, :, :]
+            img = np.expand_dims(resize(img, (IMG_HEIGHT, IMG_WIDTH), mode='symmetric', preserve_range=True), axis=-1)
+            
+            mask = seg[slice, :, :]
+            
+            try:
+                mask = make_mask(mask, type_)
+            except exc:
+                print(exc)
+            mask = np.expand_dims(resize(mask, (IMG_HEIGHT, IMG_WIDTH), mode='symmetric', preserve_range=True),axis=-1)
+            
+            X_train.append(img)
+            Y_train.append(mask)
+            
+      elif case in CASES_TEST:
+        for slice in range(0, SLICES):
+          if len(np.unique(seg[slice, :, :])) != 1:
+            print(f'Saving slice {slice} of case {case} TEST')
+            
+            slice_test +=1
+            
+            img = vol[slice, :, :]
+            img = np.expand_dims(resize(img, (IMG_HEIGHT, IMG_WIDTH), mode='symmetric', preserve_range=True), axis=-1)
+            
+            mask = seg[slice, :, :]
+            try:
+                mask = make_mask(mask, type_)
+            except exc:
+                print(exc)
+            mask = np.expand_dims(resize(mask, (IMG_HEIGHT, IMG_WIDTH), mode='symmetric', preserve_range=True),axis=-1)
+            
+            X_test.append(img)
+            Y_test.append(mask)
+      else:
+        print("End")
+    except err:
+      print(err)
+      
+      
+  X_train = np.reshape(np.array(X_train), (slice_train, IMG_HEIGHT, IMG_WIDTH, 1))
+  Y_train = np.reshape(np.array(Y_train), (slice_train, IMG_HEIGHT, IMG_WIDTH, 1))
+  X_test = np.reshape(np.array(X_test), (slice_test, IMG_HEIGHT, IMG_WIDTH, 1))
+  Y_test = np.reshape(np.array(Y_test), (slice_test, IMG_HEIGHT, IMG_WIDTH, 1))
+  return X_train, Y_train, X_test, Y_test
 
 
-path_train = 'path' # to be changed     
-path_test = 'path'
+def make_mask(img, type_):
+    '''
+    Function makes mask from original mask from kits19 (containing 0, 1, 2, where
+    0 is background, 1 is kidney, 2 is tumour)
+    
+    Takes:
+        img -> original mask with 3 classes
+        type_ -> which mask to make (string 'kidney' or 'tumour')
+    
+    Returns:
+        mask -> mask of type Bool, showing kidney or tumour according to type_ argument
+    '''
+    
+    TŁO = 0.
+    
+    if type_ == 'kidney':
+        KIDNEY = 1.
+        mask = np.where(img == KIDNEY, True,  False)
+    
+    elif type == 'tumour':
+        TUMOUR = 2.
+        mask = np.where(img == TUMOUR, True, False)
+   
+    else:
+        raise Exception('MaskTypeNotFoundError') 
+        
+    return mask
 
-save_train_test_cases(train_cases=20, test_cases=5, path_train, path_test, verbose = True, verbose_step=100)
+
+
 
