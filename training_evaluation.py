@@ -101,7 +101,8 @@ def evaluate_network(X_train, Y_train, X_test, Y_test, type_):
     if type_ == 'kidney':
         coords = [44, 74, 290, 108, 119, 1123, 101, 105, 1124]
     elif type_ == 'tumour':
-        coords = [44, 74, 290, 108, 119, 1123, 101, 105, 1124] # !!!!!
+        coords = [361, 448, 7, 89, 3, 1126]
+
 
 
     for i in coords:
