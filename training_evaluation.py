@@ -2,6 +2,7 @@
 from UNET_model import *
 from load_data import save_train_test_cases_arrays
 from plots import *
+from metrics import *
 
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 # from tensorflow.keras.models import Model
