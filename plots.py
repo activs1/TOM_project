@@ -43,7 +43,7 @@ def get_mask_on_img(img, mask):
     '''
     img - original image (grayscale, float)
     mask - predicted mask (uint with values for different elements or True and False in case of binary)
-    Returns: rgb image with mask on image (red - tumour, green - kidney)
+    Returns: rgb image with mask on image
     '''
     from starter_code.visualize import hu_to_grayscale    
     
