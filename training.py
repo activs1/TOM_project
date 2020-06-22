@@ -18,7 +18,7 @@ BATCH_SIZE = 4
 EPOCHS = 15
 IMG_CHANNELS = 1
 
-dice_loss = DiceLoss(beta=1) #per_image=True
+dice_loss = DiceLoss(beta=1) 
 dice_metric = FScore(beta=1)
 iou_metric = IOUScore()
 
