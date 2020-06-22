@@ -16,7 +16,7 @@ This file is used to train model
 IMG_WIDTH, IMG_HEIGHT = 256,256
 BATCH_SIZE = 4
 EPOCHS = 15
-IMG_CHANNELS = 3
+IMG_CHANNELS = 1
 
 dice_loss = DiceLoss(beta=1) #per_image=True
 dice_metric = FScore(beta=1)
