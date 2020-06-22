@@ -1,33 +1,71 @@
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import numpy as np
-import matplotlib.pyplot as plt
-from load_data import my_image_mask_generator
-from UNET_model import get_UNET
+from UNET_model import *
+from load_data import save_train_test_cases_arrays
+from plots import plot_training
+
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+# from tensorflow.keras.models import Model
+from segmentation_models.metrics import FScore, IOUScore
+from segmentation_models.losses import DiceLoss
+
+
 
 '''
 This file is used to train model
 '''
 
-WIDTH, HEIGHT = 512, 512
+IMG_WIDTH, IMG_HEIGHT = 256,256
 BATCH_SIZE = 4
-SAVE_PATH = ''
-EPOCHS = 1
-SEED = 100
-TARGET_SIZE = (WIDTH, HEIGHT)
+EPOCHS = 15
+IMG_CHANNELS = 3
 
-model = get_UNET((WIDTH, HEIGHT, 1))
-
-image_data_generator = ImageDataGenerator().flow_from_directory('/content/drive/My Drive/kits19/train/image/', class_mode = None, batch_size = BATCH_SIZE, target_size = TARGET_SIZE, seed = SEED)
-mask_data_generator = ImageDataGenerator().flow_from_directory('/content/drive/My Drive/kits19/train/mask/', class_mode = None, batch_size = BATCH_SIZE, target_size = TARGET_SIZE, seed = SEED)
-
-train_generator = my_image_mask_generator(image_data_generator, mask_data_generator, BATCH_SIZE)
-
-image_test_data_generator = ImageDataGenerator().flow_from_directory('/content/drive/My Drive/kits19/test/image/', class_mode = None, batch_size = BATCH_SIZE, target_size = TARGET_SIZE, seed = SEED)
-mask_test_data_generator = ImageDataGenerator().flow_from_directory('/content/drive/My Drive/kits19/test/mask/', class_mode = None, batch_size = BATCH_SIZE, target_size = TARGET_SIZE, seed = SEED)
-
-test_generator = my_image_mask_generator(image_test_data_generator, mask_test_data_generator)
-
-model.fit(train_generator, epochs=EPOCHS, validation_data=test_generator)   ##fit_generator(train_generator, steps_per_epoch=4514//4, validation_data=test_generator, validation_steps=771//4, epochs=1)
+dice_loss = DiceLoss(beta=1) #per_image=True
+dice_metric = FScore(beta=1)
+iou_metric = IOUScore()
 
 
-model.save("/content/drive/My Drive/kits19/model_unet_.h5", save_format='h5')
+
+'''
+Training kidney
+'''
+
+
+model_kidney = get_small_UNET((IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS), classes=1)
+callbacks_kidney = [
+        EarlyStopping(patience=2, monitor='val_loss'),
+        ModelCheckpoint("Unet_kidney_check.h5", monitor='val_loss', verbose=True, save_freq=10, save_best_only=True)]
+
+
+X_train, Y_train, X_test, Y_test = save_train_test_cases_arrays(test_size=0.3, num_cases=60, IMG_HEIGHT, IMG_WIDTH, type_ = 'kidney')
+TRAIN_SAMPLES_KIDNEY = Y_train.shape[0]
+TEST_SAMPLES_KIDNEY = Y_test.shape[0]
+
+model_kidney.compile(optimizer=Adam(learning_rate=1e-4), loss = dice_loss, metrics=[dice_metric,iou_metric])                                                                                                                                         
+results_kidney = model_kidney.fit(X_train, Y_train, validation_data =(X_test, Y_test), batch_size=BATCH_SIZE, epochs=EPOCHS,               steps_per_epoch = TRAIN_SAMPLES_KIDNEY/BATCH_SIZE, validation_steps = TEST_SAMPLES_KIDNEY/BATCH_SIZE, 
+                                                                                                                                         callbacks=callbacks_kidney,verbose = 1) 
+    
+model.save("Unet_kidney.h5", save_format='h5')
+
+plot_training(results_kidney)
+
+
+'''
+Training tumor
+'''
+
+
+model_tumor = get_small_UNET((IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS), classes=1)
+callbacks_tumor = [
+        tf.keras.callbacks.EarlyStopping(patience=2, monitor='val_loss'),
+        ModelCheckpoint("Unet_tumor_check.h5", monitor='val_loss', verbose=True, save_freq=10, save_best_only=True)]
+
+X_train, Y_train, X_test, Y_test = save_train_test_cases_arrays(test_size=0.3, num_cases=60, IMG_HEIGHT, IMG_WIDTH, type_ = 'tumor')
+TRAIN_SAMPLES_TUMOR = Y_train.shape[0]
+TEST_SAMPLES_TUMOR = Y_test.shape[0]
+
+model_tumor.compile(optimizer=Adam(learning_rate=1e-4), loss = dice_loss, metrics=[dice_metric,iou_metric])
+results_tumor = model_tumor.fit(X_train, Y_train, validation_data =(X_test, Y_test), batch_size=BATCH_SIZE, epochs=EPOCHS, 
+                                 steps_per_epoch = TRAIN_SAMPLES_TUMOR/BATCH_SIZE, validation_steps = TEST_SAMPLES_TUMOR/BATCH_SIZE, callbacks=callbacks, verbose = 1) 
+    
+model.save("Unet_tumor.h5", save_format='h5')
+
+plot_training(results_tumor)
