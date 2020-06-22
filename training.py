@@ -40,8 +40,8 @@ TRAIN_SAMPLES_KIDNEY = Y_train.shape[0]
 TEST_SAMPLES_KIDNEY = Y_test.shape[0]
 
 model_kidney.compile(optimizer=Adam(learning_rate=1e-4), loss = dice_loss, metrics=[dice_metric,iou_metric])                                                                                                                                         
-results_kidney = model_kidney.fit(X_train, Y_train, validation_data =(X_test, Y_test), batch_size=BATCH_SIZE, epochs=EPOCHS,               steps_per_epoch = TRAIN_SAMPLES_KIDNEY/BATCH_SIZE, validation_steps = TEST_SAMPLES_KIDNEY/BATCH_SIZE, 
-                                                                                                                                         callbacks=callbacks_kidney,verbose = 1) 
+results_kidney = model_kidney.fit(X_train, Y_train, validation_data =(X_test, Y_test), batch_size=BATCH_SIZE, epochs=EPOCHS,
+                    steps_per_epoch = TRAIN_SAMPLES_KIDNEY/BATCH_SIZE, validation_steps = TEST_SAMPLES_KIDNEY/BATCH_SIZE, callbacks=callbacks_kidney,verbose = 1)
     
 model.save("Unet_kidney.h5", save_format='h5')
 
@@ -64,7 +64,7 @@ TEST_SAMPLES_TUMOR = Y_test.shape[0]
 
 model_tumor.compile(optimizer=Adam(learning_rate=1e-4), loss = dice_loss, metrics=[dice_metric,iou_metric])
 results_tumor = model_tumor.fit(X_train, Y_train, validation_data =(X_test, Y_test), batch_size=BATCH_SIZE, epochs=EPOCHS, 
-                                 steps_per_epoch = TRAIN_SAMPLES_TUMOR/BATCH_SIZE, validation_steps = TEST_SAMPLES_TUMOR/BATCH_SIZE, callbacks=callbacks, verbose = 1) 
+                    steps_per_epoch = TRAIN_SAMPLES_TUMOR/BATCH_SIZE, validation_steps = TEST_SAMPLES_TUMOR/BATCH_SIZE, callbacks=callbacks, verbose = 1)
     
 model.save("Unet_tumor.h5", save_format='h5')
 
