@@ -1,0 +1,2 @@
+Erratum:
+  There's a mistake in a final report pdf file: instead of 3254 test cases there should be 1157 test cases
